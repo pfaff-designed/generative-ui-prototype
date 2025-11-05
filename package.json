@@ -1,0 +1,39 @@
+{
+  "name": "generative-ui-prototype",
+  "version": "1.0.0",
+  "description": "Prompt → JSON UI spec (+ text content) → React render.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfaff-design/generative-ui-prototype.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pfaff-design/generative-ui-prototype/issues"
+  },
+  "homepage": "https://github.com/pfaff-design/generative-ui-prototype#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.0.1",
+    "next": "^16.0.1",
+    "postcss": "^8.5.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.9.3",
+    "zod": "^4.1.12"
+  }
+}
