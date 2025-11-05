@@ -1,4 +1,4 @@
-import { PageSpec, TPageSpec } from "@/spec/pageSpec"
+import { PageSpec, TPageSpec } from "@/spec/ui-schemas"
 
 export function validatePageSpec(data: unknown): { success: true; data: TPageSpec } | { success: false; error: string } {
   try {

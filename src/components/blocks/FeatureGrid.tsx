@@ -1,41 +1,47 @@
-import { z } from "zod"
-import { FeatureProps as FeaturePropsSchema } from "@/spec/pageSpec"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 
-type FeatureProps = z.infer<typeof FeaturePropsSchema>
-
-interface FeatureGridComponentProps {
-  props: FeatureProps
+interface FeatureGridProps {
+  title: string
+  items: Array<{
+    icon?: string
+    label: string
+    description: string
+  }>
 }
 
-export function FeatureGrid({ props }: FeatureGridComponentProps) {
-  const { title, items } = props
+export function FeatureGrid({ title, items }: FeatureGridProps) {
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
+    <section className="py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {title && (
-          <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 dark:text-white mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
             {title}
           </h2>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((item, index) => (
-            <div
-              key={index}
-              className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow"
-            >
-              {item.icon && (
-                <div className="text-4xl mb-4" aria-hidden="true">
-                  {item.icon}
-                </div>
-              )}
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                {item.label}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                {item.description}
-              </p>
-            </div>
+            <Card key={index}>
+              <CardHeader>
+                {item.icon && (
+                  <div className="text-4xl mb-2" aria-hidden="true">
+                    {item.icon}
+                  </div>
+                )}
+                <CardTitle>{item.label}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base">
+                  {item.description}
+                </CardDescription>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>

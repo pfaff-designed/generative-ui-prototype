@@ -40,10 +40,34 @@ const Block = z.discriminatedUnion("type", [
 ])
 
 export const PageSpec = z.object({
-  version: z.literal("1"),
+  version: z.literal("1").default("1"),
   theme: z.enum(["light", "dark"]).optional(),
   blocks: z.array(Block).min(1).max(12),
 })
+
+// src/lib/planToPageSpec.ts
+type OrchestratorPlan = {
+  route?: string;
+  components: { type: string; props: any; from?: string }[];
+};
+
+type PageSpecV1 = {
+  version: "1";
+  route?: string;
+  blocks: { type: string; props: any; from?: string }[];
+};
+
+export function planToPageSpec(plan: OrchestratorPlan): PageSpecV1 {
+  return {
+    version: "1",
+    route: plan.route ?? "/",
+    blocks: plan.components.map(c => ({
+      type: c.type,
+      props: c.props,
+      from: c.from,
+    })),
+  };
+}
 
 export type TPageSpec = z.infer<typeof PageSpec>
 export type TBlock = z.infer<typeof Block>

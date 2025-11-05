@@ -1,35 +1,47 @@
-import { z } from "zod"
-import { HeroProps as HeroPropsSchema } from "@/spec/pageSpec"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
-type HeroProps = z.infer<typeof HeroPropsSchema>
-
-interface HeroComponentProps {
-  props: HeroProps
+interface HeroProps {
+  eyebrow?: string
+  headline: string
+  subhead?: string
+  cta?: {
+    label: string
+    href?: string
+    variant?: "default" | "secondary" | "destructive" | "ghost" | "link" | "outline"
+  }
 }
 
-export function Hero({ props }: HeroComponentProps) {
-  const { content } = props
-
+export function Hero({ eyebrow, headline, subhead, cta }: HeroProps) {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <section className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto text-center">
-        {content.heading && (
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            {content.heading}
-          </h1>
+        {eyebrow && (
+          <Badge variant="secondary" className="mb-4">
+            {eyebrow}
+          </Badge>
         )}
-        {content.subheading && (
-          <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            {content.subheading}
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+          {headline}
+        </h1>
+        {subhead && (
+          <p className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            {subhead}
           </p>
         )}
-        {content.ctaLabel && (
-          <button
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            type="button"
+        {cta && (
+          <Button 
+            size="lg" 
+            variant={cta.variant || "default"}
+            className="mt-4"
+            {...(cta.href ? { asChild: true } : {})}
           >
-            {content.ctaLabel}
-          </button>
+            {cta.href ? (
+              <a href={cta.href}>{cta.label}</a>
+            ) : (
+              cta.label
+            )}
+          </Button>
         )}
       </div>
     </section>

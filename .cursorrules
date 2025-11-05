@@ -1,0 +1,155 @@
+# Cursor Rules: Generative UI Prototype
+
+## Project Overview
+This is a prompt-to-page prototype that demonstrates AI-driven UI generation. Users enter a prompt → AI returns a validated JSON "layout spec" + text content → React renders components with that content.
+
+**Key Stack:**
+- Next.js 16 (App Router) + React + TypeScript
+- Tailwind CSS
+- Anthropic SDK (Claude)
+- Zod for schema validation
+- Vercel deployment
+
+**Note:** User-facing agents (like the Q&A endpoint) are governed by rules in the `rules/` folder. This file is for coding assistance only.
+
+## Architecture Principles
+
+### 1. Single Source of Truth
+- Rules live in `rules/orchestrator-agent.md` and `rules/copywriter-agent.md`
+- `src/lib/rules.ts` loads and caches these files
+- Both page generation and Q&A endpoints use the same rules bundle via `buildSystemPrompt()`
+
+### 2. Type Safety First
+- All AI outputs are validated with Zod schemas at the API boundary
+- TypeScript types are inferred from Zod schemas (`z.infer<>`)
+- Never trust AI output without validation
+
+### 3. Safe Rendering
+- Whitelist-only component rendering (only approved block types)
+- No HTML injection - all model output is rendered as text only
+- Error boundaries wrap each block for graceful failures
+
+### 4. Fail-Safe Patterns
+- If a block fails validation, skip it and show an inline warning (dev mode)
+- Pre-filter questions before calling the model (saves tokens + guarantees behavior)
+- JSON extraction handles markdown-wrapped responses
+
+## Code Structure
+
+```
+/src
+  /app
+    /api
+      /generate          # Page generation endpoint
+      /charles-qa        # Q&A endpoint (uses rules from rules/)
+    page.tsx             # Main UI with prompt input
+  /components
+    /blocks              # Whitelisted block components (Hero, FeatureGrid, Testimonial)
+    BlockRenderer.tsx    # Maps block type → component
+    ErrorBoundary.tsx    # Catches render errors
+  /lib
+    rules.ts             # Loads rules from rules/ folder (with caching)
+    prompts.ts           # buildSystemPrompt() - merges rules + profile
+    ai-client.ts         # Anthropic SDK wrapper
+    validation.ts        # Zod validation helpers
+    json-extract.ts      # Extracts JSON from markdown-wrapped responses
+    question-filter.ts   # Pre-filters off-topic questions
+  /spec
+    pageSpec.ts          # Zod schema + TypeScript types for PageSpec
+```
+
+## Coding Standards
+
+### TypeScript
+- Use strict mode (already configured)
+- Prefer `z.infer<>` for type inference from Zod schemas
+- Use discriminated unions for block types
+- Path aliases: `@/*` maps to `./src/*`
+
+### API Routes
+- Always validate input (prompt length, type, etc.)
+- Validate AI output with Zod before returning
+- Return structured errors with appropriate HTTP status codes
+- Log errors in development, sanitize in production
+
+### Component Patterns
+- Use functional components with hooks
+- Keep components small and focused
+- Each block component accepts typed props from schema
+- Use ErrorBoundary for render safety
+
+### AI Integration Best Practices
+- Always use `buildSystemPrompt()` for consistency
+- Pre-filter questions when possible (saves tokens)
+- Extract JSON from markdown-wrapped responses
+- Use low temperature (0.3) for deterministic outputs
+- Cap tokens appropriately (2000 for generation, 1000 for Q&A)
+
+### Error Handling
+- Validate at boundaries (API routes, component props)
+- Use try/catch with typed error handling
+- Provide helpful error messages in development
+- Gracefully degrade on validation failures
+
+### Performance
+- Cache rules in `rules.ts` (hot-reload in dev, 1min cache in prod)
+- Use React Error Boundaries to isolate failures
+- Lazy load rules only when needed
+
+## File Naming & Organization
+- API routes: `route.ts` in `app/api/{endpoint}/`
+- Utilities: `kebab-case.ts` in `src/lib/`
+- Components: `PascalCase.tsx` in `src/components/`
+- Schemas: `camelCase.ts` in `src/spec/`
+
+## Testing Considerations
+- TypeScript compilation ensures type safety
+- Zod validates runtime schema compliance
+- Manual testing: verify JSON generation and rendering
+- Error states tested manually (invalid JSON, API failures)
+
+## Security
+- No HTML rendering from model output (text only)
+- Environment variables for API keys (never commit)
+- Input validation on all API routes
+- Token caps to prevent abuse
+
+## When Adding New Features
+- Add new block types to `src/spec/pageSpec.ts` first
+- Create corresponding component in `src/components/blocks/`
+- Update `BlockRenderer.tsx` to map new type
+- Update system prompt in `src/lib/prompts.ts` with new component schema
+- Test validation and rendering
+
+## Common Patterns
+
+### Adding a New Block Type
+1. Add schema to `pageSpec.ts` (discriminated union)
+2. Create component in `components/blocks/`
+3. Add to `BlockRenderer.tsx` mapping
+4. Update prompt in `prompts.ts` with schema
+
+### Modifying Rules
+- Edit `rules/orchestrator-agent.md` or `rules/copywriter-agent.md`
+- Rules auto-reload in development (via `rules.ts` cache)
+- Both endpoints use updated rules automatically
+
+### Debugging JSON Parsing Issues
+- Check `src/lib/json-extract.ts` for extraction logic
+- Log raw response in development (see `api/generate/route.ts`)
+- Verify system prompt is explicit about JSON-only output
+
+## Avoid These
+- Don't render HTML from AI output
+- Don't bypass Zod validation
+- Don't hardcode rules (use `rules.ts` loader)
+- Don't add new block types without updating schema + prompt
+- Don't use high temperature (breaks determinism)
+- Don't skip error boundaries
+
+## Questions to Ask Before Coding
+- Is this validated at the API boundary?
+- Does this use the shared rules loader?
+- Is this fail-safe if validation fails?
+- Does this follow the whitelist pattern?
+- Is the error handling graceful?
