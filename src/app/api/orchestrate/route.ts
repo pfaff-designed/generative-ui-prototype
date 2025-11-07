@@ -181,7 +181,16 @@ Your output must match this exact structure:
 Copy payload:
 ${JSON.stringify(copy, null, 2)}`
 
+    // Log input for verification
+    console.log("\n=== ORCHESTRATOR API CALL ===")
+    console.log("Intent:", trimmedIntent)
+    console.log("Copy keys:", copy && typeof copy === "object" && "sections" in copy 
+      ? (copy.sections as any[])?.map((s: any) => s?.key).filter(Boolean).join(", ") || "none"
+      : "unknown")
+    console.log("Model: claude-3-5-haiku-20241022")
+
     // Call Anthropic
+    const startTime = Date.now()
     const anthropic = getAnthropicClient()
     const message = await anthropic.messages.create({
       model: "claude-3-5-haiku-20241022",
@@ -195,6 +204,7 @@ ${JSON.stringify(copy, null, 2)}`
         },
       ],
     })
+    const duration = Date.now() - startTime
 
     const content = message.content[0]
     if (content.type !== "text") {
@@ -205,19 +215,27 @@ ${JSON.stringify(copy, null, 2)}`
       throw new Error("No content returned from Anthropic")
     }
 
+    // Log AI response details
+    console.log(`\n=== ORCHESTRATOR AI RESPONSE (${duration}ms) ===`)
+    console.log("Raw response (first 500 chars):", content.text.substring(0, 500))
+    console.log("Usage:", JSON.stringify(message.usage, null, 2))
+
     // Parse JSON response
     let parsedData: unknown
     try {
       parsedData = parseJSONResponse(content.text)
+      console.log("Parsed plan:", JSON.stringify(parsedData, null, 2))
+      if (typeof parsedData === "object" && parsedData !== null && "components" in parsedData) {
+        const components = (parsedData as any).components || []
+        console.log(`Components generated: ${components.length}`)
+        components.forEach((comp: any, i: number) => {
+          console.log(`  ${i + 1}. ${comp.type} (from: ${comp.from || "unknown"})`)
+        })
+      }
     } catch (parseError) {
       console.error("JSON parse error. Raw response:", content.text.substring(0, 500))
       console.error("Parse error:", parseError)
       throw new Error("Failed to parse AI response as JSON")
-    }
-
-    // Check for out-of-scope error
-    if (typeof parsedData === "object" && parsedData !== null && "error" in parsedData) {
-      return NextResponse.json(parsedData, { status: 200 })
     }
 
     return NextResponse.json(parsedData)

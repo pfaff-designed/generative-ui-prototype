@@ -83,9 +83,10 @@ export async function POST(request: NextRequest) {
     const { copywriter } = getRulesBundle()
 
     // Build system prompt
+    // Note: Static data is provided as reference, but AI should generate content for any topic
     const systemPrompt = `${copywriter}
 
-## Static Data
+## Reference Data (Use when relevant to the brief)
 
 ${JSON.stringify(STATIC_DATA, null, 2)}
 
@@ -97,14 +98,23 @@ You must return ONLY valid JSON. Do not include:
 - Any text outside the JSON object
 - Comments or annotations
 
-The response must start with { and end with }. Nothing else.`
+The response must start with { and end with }. Nothing else.
+
+Generate content for any topic requested in the brief. Use the reference data above only if it's relevant to the brief. Otherwise, create appropriate content based on the brief itself.`
 
     // Build user message
     const userMessage = style
       ? `Brief: ${trimmedBrief}\n\nStyle: ${style}`
       : `Brief: ${trimmedBrief}`
 
+    // Log input for verification
+    console.log("\n=== COPYWRITER API CALL ===")
+    console.log("Brief:", trimmedBrief)
+    if (style) console.log("Style:", style)
+    console.log("Model: claude-3-5-haiku-20241022")
+
     // Call Anthropic
+    const startTime = Date.now()
     const anthropic = getAnthropicClient()
     const message = await anthropic.messages.create({
       model: "claude-3-5-haiku-20241022",
@@ -118,6 +128,7 @@ The response must start with { and end with }. Nothing else.`
         },
       ],
     })
+    const duration = Date.now() - startTime
 
     const content = message.content[0]
     if (content.type !== "text") {
@@ -128,19 +139,20 @@ The response must start with { and end with }. Nothing else.`
       throw new Error("No content returned from Anthropic")
     }
 
+    // Log AI response details
+    console.log(`\n=== COPYWRITER AI RESPONSE (${duration}ms) ===`)
+    console.log("Raw response (first 500 chars):", content.text.substring(0, 500))
+    console.log("Usage:", JSON.stringify(message.usage, null, 2))
+
     // Parse JSON response
     let parsedData: unknown
     try {
       parsedData = parseJSONResponse(content.text)
+      console.log("Parsed JSON:", JSON.stringify(parsedData, null, 2))
     } catch (parseError) {
       console.error("JSON parse error. Raw response:", content.text.substring(0, 500))
       console.error("Parse error:", parseError)
       throw new Error("Failed to parse AI response as JSON")
-    }
-
-    // Check for out-of-scope error
-    if (typeof parsedData === "object" && parsedData !== null && "error" in parsedData) {
-      return NextResponse.json(parsedData, { status: 200 })
     }
 
     return NextResponse.json(parsedData)
